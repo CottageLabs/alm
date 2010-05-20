@@ -1,6 +1,7 @@
 class Source < ActiveRecord::Base
   has_many :retrievals, :dependent => :destroy
-
+  belongs_to :group
+  
   validates_presence_of :name
   validates_presence_of :url, :if => :uses_url
   validates_presence_of :username, :if => :uses_username
@@ -70,6 +71,10 @@ class Source < ActiveRecord::Base
   def self.maximum_staleness
     SecondsToDuration::convert(Source.maximum(:staleness))
   end
+  
+  def self.minimum_staleness
+    SecondsToDuration::convert(Source.minimum(:staleness))
+  end  
 
   def public_url(retrieval)
     # When generating a public URL to an article's citations on the source
