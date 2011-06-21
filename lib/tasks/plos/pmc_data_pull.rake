@@ -21,7 +21,6 @@ require "source_helper"
 include SourceHelper
 
 namespace :pmc do
-  RAILS_DEFAULT_LOGGER = ActiveSupport::BufferedLogger.new "#{RAILS_ROOT}/log/#{RAILS_ENV}_pmc_data_pull_rake.log"
 
   task :update => :environment do
     
