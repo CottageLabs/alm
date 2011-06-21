@@ -10,7 +10,7 @@ mkdir alm
 svn co https://alt-metrics.googlecode.com/svn/trunk alm
 
 mkdir alm.plos
-svn co http://ambraproject.org/svn/plos/alm/head alm.plos
+svn co http://ambraproject.org/svn/plos/plos-alm/head alm.plos
 
 rm -rf alm/app/models/sources
 ln -s ../../../alm.plos/sources alm/app/models/sources
