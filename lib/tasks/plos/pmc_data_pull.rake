@@ -88,8 +88,8 @@ namespace :pmc do
         
     months.each do | month |
       call_rake "pmc:update", {:MONTH => month, :YEAR => year}
-      # timeout value of 7 hours (just in case)
-      call_rake "db:update", {:LAZY => 0, :SOURCE => "Pmc", :TIMEOUT => 420}
+      # timeout value of 24 hours (just in case)
+      call_rake "db:update", {:LAZY => 0, :SOURCE => "Pmc", :TIMEOUT => 1440}
     end
 
     time = Time.new
@@ -98,8 +98,8 @@ namespace :pmc do
 
     months.each do | month |
       call_rake "pmc:update", {:MONTH => month, :YEAR => year}
-      # timeout value of 7 hours (just in case)
-      call_rake "db:update", {:LAZY => 0, :SOURCE => "Pmc", :TIMEOUT => 420}
+      # timeout value of 24 hours (just in case)
+      call_rake "db:update", {:LAZY => 0, :SOURCE => "Pmc", :TIMEOUT => 1440}
     end
   end
 
