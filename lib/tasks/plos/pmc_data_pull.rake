@@ -46,7 +46,7 @@ namespace :pmc do
     mainDocument.root.attributes['month'] = month.to_s
     mainDocument.root.attributes['year'] = year.to_s
 
-    journals = ["plosbiol", "plosmed", "ploscomp", "plosgen", "plospath", "plosone", "plosntds"];
+    journals = ["plosbiol", "plosmed", "ploscomp", "plosgen", "plospath", "plosone", "plosntd"];
 
     journals.each do |journal|
       Rails.logger.info "Getting PMC information for journal #{journal}"
@@ -82,14 +82,13 @@ namespace :pmc do
   task :update_all => :environment do
     # this code is meant to run just once, when PMC is added as a source
     # should be removed after the deployment.
-    
+
+    # get all the data
     months = (1..12).to_a
     year = 2010
         
     months.each do | month |
       call_rake "pmc:update", {:MONTH => month, :YEAR => year}
-      # timeout value of 24 hours (just in case)
-      call_rake "db:update", {:LAZY => 0, :SOURCE => "Pmc", :TIMEOUT => 1440}
     end
 
     time = Time.new
@@ -98,8 +97,6 @@ namespace :pmc do
 
     months.each do | month |
       call_rake "pmc:update", {:MONTH => month, :YEAR => year}
-      # timeout value of 24 hours (just in case)
-      call_rake "db:update", {:LAZY => 0, :SOURCE => "Pmc", :TIMEOUT => 1440}
     end
   end
 
@@ -108,6 +105,76 @@ namespace :pmc do
     options[:rails_env] ||= Rails.env
     args = options.map { |n, v| "#{n.to_s.upcase}='#{v}'" }
     system "rake #{task} #{args.join(' ')} --trace"
+  end
+
+  task :update_all2 => :environment do
+    # this code is meant to run just once, when PMC is added as a source
+    # should be removed after the deployment.
+
+    puts Time.now
+    
+    # there should be just one
+    source = Source.find_by_type("Pmc")
+
+    retriever = Retriever.new(:lazy => 0,
+      :only_source => "Pmc",
+      :raise_on_error => ENV["RAISE_ON_ERROR"])
+
+    config = YAML.parse(source.misc)
+    filepath = config["filepath"]
+    filepath = filepath.transform
+    index = filepath.rindex('.')
+
+    years = [2010, 2011]
+    
+    years.each do | year |
+      if (year == 2010)
+        months = (1..12).to_a
+      end
+
+      if (year == 2011)
+        time = Time.new
+        months = (1..time.month-1).to_a
+      end
+
+      months.each do | month |
+        puts "#{month} / #{year}"
+
+        month_filepath = filepath[0..index-1] + "_#{month}_#{year}.xml"
+        system "cp #{month_filepath} #{filepath}"
+
+        puts "#{month_filepath} #{filepath}"
+
+        parser = XML::Parser.file(filepath)
+        document = parser.parse
+
+        nodes = document.find("//article")
+        total = nodes.count
+
+        puts "total #{total}"
+
+        i = 1;
+        nodes.each do | article_document |
+          metadata = article_document.find_first("meta-data")
+          attributes = metadata.attributes
+          doi = attributes[:doi]
+
+          puts "#{month}/#{year} #{i} of #{total} #{doi}"
+          i = i + 1
+
+          article = Article.find_by_doi(doi)
+          if article != nil
+            retrieval = Retrieval.find_or_create_by_article_id_and_source_id(article.id, source.id)
+            retriever.update_one(retrieval, source, article)
+          else
+            puts "article #{doi} doesn't exist"
+          end
+
+        end # article
+      end  # month
+    end  # year
+
+    puts Time.now
   end
   
 end
